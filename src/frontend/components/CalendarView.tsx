@@ -1,4 +1,5 @@
 import type { TaskDto } from "../lib/types";
+import Face, { type Expression } from "./Face";
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -34,6 +35,25 @@ function buildDaySummaries(tasks: TaskDto[]): Map<string, DaySummary> {
   return map;
 }
 
+type DayMood = "done" | "partial" | "missed" | "upcoming" | "free";
+
+function moodOf(date: string, today: string, summary: DaySummary | undefined): DayMood {
+  if (!summary || summary.scheduled === 0) return "free";
+  if (summary.completed === summary.scheduled) return "done";
+  if (summary.completed > 0) return "partial";
+  return date < today ? "missed" : "upcoming";
+}
+
+const MOOD_STYLE: Record<DayMood, { tile: string; expression: Expression | null; label: string }> = {
+  done: { tile: "bg-mint text-ink", expression: "content", label: "모두 완료" },
+  partial: { tile: "bg-lemon text-ink", expression: "neutral", label: "일부 완료" },
+  missed: { tile: "bg-bubble text-ink", expression: "sad", label: "못한 날" },
+  upcoming: { tile: "bg-grape-soft text-ink", expression: "sleepy", label: "예정" },
+  free: { tile: "bg-lilac-soft text-ink/35", expression: null, label: "할일 없음" },
+};
+
+const LEGEND: DayMood[] = ["done", "partial", "missed", "upcoming"];
+
 export default function CalendarView({
   month,
   onMonthChange,
@@ -57,68 +77,70 @@ export default function CalendarView({
   for (let i = 0; i < firstDow; i++) cells.push(null);
   for (let d = 1; d <= total; d++) cells.push(`${month}-${String(d).padStart(2, "0")}`);
 
-  function dayClass(date: string, summary: DaySummary | undefined): string {
-    if (!summary || summary.scheduled === 0) return "text-black/70";
-    if (summary.completed === summary.scheduled) return "bg-emerald-400 text-white";
-    if (summary.completed > 0) return "bg-amber-400 text-white";
-    if (date < today) return "border-2 border-rose-300 text-rose-500";
-    return "border-2 border-sky-200 text-sky-600";
-  }
-
   return (
     <div className="card p-4">
-      <div className="flex items-center justify-between mb-3">
-        <button onClick={() => onMonthChange(shiftMonth(month, -1))} className="w-8 h-8 rounded-full bg-black/5 text-black/60">
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => onMonthChange(shiftMonth(month, -1))}
+          className="w-10 h-10 rounded-full bg-lilac border-2 border-ink/10 font-black text-lg active:translate-y-0.5 transition"
+          aria-label="이전 달"
+        >
           ‹
         </button>
-        <div className="font-bold">
+        <div className="text-xl font-black tracking-tight">
           {y}년 {m}월
         </div>
-        <button onClick={() => onMonthChange(shiftMonth(month, 1))} className="w-8 h-8 rounded-full bg-black/5 text-black/60">
+        <button
+          onClick={() => onMonthChange(shiftMonth(month, 1))}
+          className="w-10 h-10 rounded-full bg-lilac border-2 border-ink/10 font-black text-lg active:translate-y-0.5 transition"
+          aria-label="다음 달"
+        >
           ›
         </button>
       </div>
 
-      <div className="grid grid-cols-7 text-center text-xs text-black/40 mb-1">
+      <div className="grid grid-cols-7 text-center text-[11px] font-bold text-ink/35 mb-1.5">
         {WEEKDAY_LABELS.map((w) => (
           <div key={w}>{w}</div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-y-1 text-center text-sm">
+      <div className="grid grid-cols-7 gap-1">
         {cells.map((date, i) => {
           if (!date) return <div key={i} />;
           const day = Number(date.slice(-2));
-          const summary = summaries.get(date);
+          const mood = moodOf(date, today, summaries.get(date));
+          const style = MOOD_STYLE[mood];
           const isSelected = selectedDate === date;
           const isToday = date === today;
           return (
             <button
               key={date}
               onClick={() => onSelectDate?.(date)}
-              className={`mx-auto w-8 h-8 rounded-full flex items-center justify-center transition ${dayClass(date, summary)} ${
-                isSelected ? "ring-2 ring-offset-1 ring-ink" : ""
-              } ${isToday ? "font-bold" : ""}`}
+              title={`${day}일 · ${style.label}`}
+              className={`aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 border-2 transition ${style.tile} ${
+                isSelected ? "border-ink" : "border-transparent"
+              } ${isToday ? "ring-2 ring-grape ring-offset-1" : ""}`}
             >
-              {day}
+              <span className={`text-[10px] leading-none ${isToday ? "font-black" : "font-bold"}`}>{day}</span>
+              {style.expression && <Face expression={style.expression} className="w-5 h-5" />}
             </button>
           );
         })}
       </div>
 
-      <div className="flex flex-wrap gap-3 mt-4 text-xs text-black/50">
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-full bg-emerald-400 inline-block" /> 모두 완료
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" /> 일부 완료
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-full border-2 border-rose-300 inline-block" /> 미완료
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-full border-2 border-sky-200 inline-block" /> 예정
-        </span>
+      <div className="flex flex-wrap gap-x-3 gap-y-2 mt-4 text-[11px] font-bold text-ink/50">
+        {LEGEND.map((mood) => {
+          const style = MOOD_STYLE[mood];
+          return (
+            <span key={mood} className="flex items-center gap-1.5">
+              <span className={`w-5 h-5 rounded-lg flex items-center justify-center ${style.tile}`}>
+                {style.expression && <Face expression={style.expression} className="w-3.5 h-3.5" />}
+              </span>
+              {style.label}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

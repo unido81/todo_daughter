@@ -22,7 +22,7 @@ export default function App() {
   }
 
   if (checking) {
-    return <div className="min-h-screen flex items-center justify-center text-black/30">불러오는 중...</div>;
+    return <div className="min-h-screen flex items-center justify-center font-bold text-ink/30">불러오는 중...</div>;
   }
 
   if (!role) {

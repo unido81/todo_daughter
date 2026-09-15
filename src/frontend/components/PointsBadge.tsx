@@ -1,6 +1,6 @@
 export default function PointsBadge({ balance }: { balance: number }) {
   return (
-    <div className="flex items-center gap-1.5 bg-amber-100 text-amber-700 border border-amber-200 rounded-full px-3 py-1.5 font-bold text-sm">
+    <div className="flex items-center gap-1.5 bg-lemon text-ink border-2 border-ink/10 rounded-full px-3.5 py-2 font-black text-sm">
       <span>⭐</span>
       <span>{balance}P</span>
     </div>

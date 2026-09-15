@@ -1,5 +1,6 @@
 import type { TaskDto } from "../lib/types";
 import { CATEGORY_META, categoryChipClass } from "../lib/category";
+import Face from "./Face";
 
 export interface OccurrenceItem {
   task: TaskDto;
@@ -19,7 +20,7 @@ export default function TaskList({
   onToggle,
   onEdit,
   onDelete,
-  emptyText = "이 날은 할일이 없어요.",
+  emptyText = "이 날은 할일이 없어요. 신난다! 🎉",
 }: {
   items: OccurrenceItem[];
   onToggle?: (item: OccurrenceItem) => void;
@@ -28,45 +29,73 @@ export default function TaskList({
   emptyText?: string;
 }) {
   if (items.length === 0) {
-    return <div className="card p-6 text-center text-black/40 text-sm">{emptyText}</div>;
+    return (
+      <div className="card p-8 flex flex-col items-center gap-3 text-center">
+        <div className="w-16 h-16 rounded-full bg-mint border-2 border-ink/10 flex items-center justify-center text-ink">
+          <Face expression="happy" className="w-9 h-9" />
+        </div>
+        <p className="font-bold text-ink/50">{emptyText}</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       {items.map((item) => {
         const meta = CATEGORY_META[item.task.category];
         return (
-          <div key={`${item.task.id}-${item.date}`} className="card p-4 flex items-center gap-3">
+          <div
+            key={`${item.task.id}-${item.date}`}
+            className={`card p-4 flex items-center gap-3.5 transition ${item.completed ? "bg-mint-soft" : ""}`}
+          >
             {onToggle && (
               <button
                 onClick={() => onToggle(item)}
-                className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center border-2 transition ${
-                  item.completed ? "bg-emerald-400 border-emerald-400 text-white" : "border-black/15 text-transparent"
+                className={`w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center border-2 transition ${
+                  item.completed
+                    ? "bg-mint border-ink/10 text-ink animate-pop"
+                    : "bg-lilac-soft border-dashed border-ink/20 text-ink/20"
                 }`}
-                aria-label="완료 체크"
+                aria-label={item.completed ? "완료 취소" : "완료 체크"}
               >
-                ✓
+                <Face expression={item.completed ? "happy" : "sleepy"} className="w-7 h-7" />
               </button>
             )}
             <div className="flex-1 min-w-0">
-              <div className={`font-semibold truncate ${item.completed ? "line-through text-black/30" : ""}`}>{item.task.title}</div>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <span className={`text-xs px-2 py-0.5 rounded-full ${categoryChipClass(item.task.category)}`}>
+              <div className={`font-extrabold text-[15px] truncate ${item.completed ? "line-through text-ink/35" : ""}`}>
+                {item.task.title}
+              </div>
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${categoryChipClass(item.task.category)}`}>
                   {meta.emoji} {meta.label}
                 </span>
-                <span className="text-xs text-black/35">{REPEAT_LABELS[item.task.repeatType]}</span>
-                {item.task.points > 0 && <span className="text-xs text-amber-600 font-semibold">⭐ {item.task.points}P</span>}
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-lilac text-lilac-deep">
+                  {REPEAT_LABELS[item.task.repeatType]}
+                </span>
+                {item.task.points > 0 && (
+                  <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-lemon text-ink border-2 border-ink/10">
+                    ⭐ {item.task.points}P
+                  </span>
+                )}
               </div>
             </div>
             {(onEdit || onDelete) && (
-              <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="flex items-center gap-1.5 flex-shrink-0">
                 {onEdit && (
-                  <button onClick={() => onEdit(item.task)} className="w-8 h-8 rounded-full bg-black/5 text-black/50 text-sm">
+                  <button
+                    onClick={() => onEdit(item.task)}
+                    className="w-9 h-9 rounded-xl bg-lilac border-2 border-ink/10 text-ink/50 text-sm font-bold active:translate-y-0.5 transition"
+                    aria-label="수정"
+                  >
                     ✎
                   </button>
                 )}
                 {onDelete && (
-                  <button onClick={() => onDelete(item.task)} className="w-8 h-8 rounded-full bg-black/5 text-black/50 text-sm">
+                  <button
+                    onClick={() => onDelete(item.task)}
+                    className="w-9 h-9 rounded-xl bg-bubble-soft border-2 border-bubble text-bubble-deep text-sm font-bold active:translate-y-0.5 transition"
+                    aria-label="삭제"
+                  >
                     ✕
                   </button>
                 )}

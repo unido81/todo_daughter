@@ -7,14 +7,51 @@ html, body, #root {
 }
 
 body {
-  background: #fbf7f2;
-  color: #2b2b33;
+  background: #ede8fa;
+  color: #14131a;
 }
 
-.card {
-  @apply bg-white rounded-3xl shadow-sm shadow-black/5 border border-black/5;
+@layer components {
+  .card {
+    @apply bg-white rounded-blob border-2 border-ink/10;
+    box-shadow: 0 4px 0 0 rgba(20, 19, 26, 0.06);
+  }
+
+  .tile {
+    @apply rounded-blob border-2 border-ink/10 p-4;
+    box-shadow: 0 4px 0 0 rgba(20, 19, 26, 0.06);
+  }
+
+  .chunky {
+    @apply rounded-full font-extrabold transition active:translate-y-0.5;
+  }
 }
 
 .tab-bar-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.animate-pop {
+  animation: pop 0.35s ease-out;
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+  50% { transform: translateY(-10px) rotate(var(--tilt, 0deg)); }
+}
+
+.animate-floaty {
+  animation: floaty 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pop, .animate-floaty {
+    animation: none;
+  }
 }
