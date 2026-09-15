@@ -1,0 +1,75 @@
+import { Hono } from "hono";
+import type { AppEnv, RewardRow, RedemptionRow } from "../types";
+import { requireAuth, requireDad } from "../lib/auth";
+import { newId, getPointsBalance } from "../lib/db";
+
+const rewards = new Hono<AppEnv>();
+
+rewards.get("/", requireAuth, async (c) => {
+  const { results } = await c.env.DB.prepare(`SELECT * FROM rewards WHERE active = 1 ORDER BY cost_points ASC`).all<RewardRow>();
+  const balance = await getPointsBalance(c.env.DB);
+  return c.json({ rewards: results, balance });
+});
+
+rewards.get("/history", requireAuth, async (c) => {
+  const { results } = await c.env.DB.prepare(`SELECT * FROM redemptions ORDER BY redeemed_at DESC LIMIT 50`).all<RedemptionRow>();
+  return c.json({ history: results });
+});
+
+rewards.post("/", requireDad, async (c) => {
+  const body = await c.req.json<{ title?: string; costPoints?: number; icon?: string }>().catch(() => null);
+  if (!body || typeof body.title !== "string" || body.title.trim().length === 0) {
+    return c.json({ error: "보상 이름을 입력해주세요." }, 400);
+  }
+  if (typeof body.costPoints !== "number" || body.costPoints <= 0) {
+    return c.json({ error: "포인트는 1 이상이어야 합니다." }, 400);
+  }
+  const id = newId();
+  await c.env.DB.prepare(`INSERT INTO rewards (id, title, cost_points, icon, active) VALUES (?1, ?2, ?3, ?4, 1)`)
+    .bind(id, body.title.trim(), Math.floor(body.costPoints), body.icon && body.icon.length <= 4 ? body.icon : "🎁")
+    .run();
+  return c.json({ ok: true, id });
+});
+
+rewards.put("/:id", requireDad, async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json<{ title?: string; costPoints?: number; icon?: string }>().catch(() => null);
+  if (!body || typeof body.title !== "string" || body.title.trim().length === 0) {
+    return c.json({ error: "보상 이름을 입력해주세요." }, 400);
+  }
+  if (typeof body.costPoints !== "number" || body.costPoints <= 0) {
+    return c.json({ error: "포인트는 1 이상이어야 합니다." }, 400);
+  }
+  await c.env.DB.prepare(`UPDATE rewards SET title=?2, cost_points=?3, icon=?4 WHERE id=?1`)
+    .bind(id, body.title.trim(), Math.floor(body.costPoints), body.icon && body.icon.length <= 4 ? body.icon : "🎁")
+    .run();
+  return c.json({ ok: true });
+});
+
+rewards.delete("/:id", requireDad, async (c) => {
+  const id = c.req.param("id");
+  await c.env.DB.prepare(`UPDATE rewards SET active = 0 WHERE id = ?1`).bind(id).run();
+  return c.json({ ok: true });
+});
+
+rewards.post("/:id/redeem", requireAuth, async (c) => {
+  const id = c.req.param("id");
+  const reward = await c.env.DB.prepare(`SELECT * FROM rewards WHERE id = ?1 AND active = 1`).bind(id).first<RewardRow>();
+  if (!reward) return c.json({ error: "보상을 찾을 수 없습니다." }, 404);
+
+  const balance = await getPointsBalance(c.env.DB);
+  if (balance < reward.cost_points) {
+    return c.json({ error: "포인트가 부족해요." }, 400);
+  }
+
+  await c.env.DB.prepare(
+    `INSERT INTO redemptions (id, reward_id, reward_title, points_spent, status, resolved_at) VALUES (?1, ?2, ?3, ?4, 'fulfilled', datetime('now'))`,
+  )
+    .bind(newId(), reward.id, reward.title, reward.cost_points)
+    .run();
+
+  const newBalance = balance - reward.cost_points;
+  return c.json({ ok: true, balance: newBalance });
+});
+
+export default rewards;

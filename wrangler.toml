@@ -1,0 +1,18 @@
+name = "todo-daughter"
+main = "src/worker/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "todo_daughter_db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+# wrangler secret put JWT_SECRET
+# wrangler secret put DAD_PASSWORD
+# wrangler secret put DAUGHTER_PASSWORD
