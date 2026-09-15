@@ -10,7 +10,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "todo_daughter_db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "0fc1b5e7-febd-432e-8728-87524b675dcb"
 migrations_dir = "migrations"
 
 # wrangler secret put JWT_SECRET
