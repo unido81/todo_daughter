@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import type { RedemptionDto, RewardDto } from "../lib/types";
+import { REDEMPTION_STATUS_META } from "../lib/reward";
 import PointsBadge from "./PointsBadge";
 
 const EMOJI_CHOICES = ["🎁", "🍭", "🍦", "🎮", "📱", "🎬", "🧸", "🚲", "💰", "🍕"];
@@ -9,7 +10,9 @@ export default function RewardManager() {
   const [rewards, setRewards] = useState<RewardDto[]>([]);
   const [balance, setBalance] = useState(0);
   const [history, setHistory] = useState<RedemptionDto[]>([]);
+  const [pending, setPending] = useState<RedemptionDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
   const [cost, setCost] = useState(10);
@@ -21,10 +24,11 @@ export default function RewardManager() {
   async function load() {
     setLoading(true);
     try {
-      const [r, h] = await Promise.all([api.rewards(), api.rewardHistory()]);
+      const [r, h, p] = await Promise.all([api.rewards(), api.rewardHistory(), api.pendingRedemptions()]);
       setRewards(r.rewards);
       setBalance(r.balance);
       setHistory(h.history);
+      setPending(p.pending);
     } finally {
       setLoading(false);
     }
@@ -33,6 +37,26 @@ export default function RewardManager() {
   useEffect(() => {
     load();
   }, []);
+
+  async function handleApprove(redemptionId: string) {
+    setResolvingId(redemptionId);
+    try {
+      await api.approveRedemption(redemptionId);
+      load();
+    } finally {
+      setResolvingId(null);
+    }
+  }
+
+  async function handleReject(redemptionId: string) {
+    setResolvingId(redemptionId);
+    try {
+      await api.rejectRedemption(redemptionId);
+      load();
+    } finally {
+      setResolvingId(null);
+    }
+  }
 
   function resetForm() {
     setTitle("");
@@ -127,6 +151,38 @@ export default function RewardManager() {
         </div>
       </form>
 
+      {pending.length > 0 && (
+        <div>
+          <h3 className="font-semibold text-sm mb-2 px-1">승인 대기중인 교환 신청 ({pending.length})</h3>
+          <div className="space-y-2">
+            {pending.map((p) => (
+              <div key={p.id} className="card p-3 flex items-center gap-3 border-amber-200">
+                <div className="flex-1">
+                  <div className="font-semibold text-sm">{p.reward_title}</div>
+                  <div className="text-xs text-amber-600 font-bold">
+                    ⭐ {p.points_spent}P · {p.redeemed_at.slice(0, 16).replace("T", " ")}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleReject(p.id)}
+                  disabled={resolvingId === p.id}
+                  className="px-3 py-2 rounded-xl bg-black/5 text-black/50 text-sm font-semibold disabled:opacity-40"
+                >
+                  거절
+                </button>
+                <button
+                  onClick={() => handleApprove(p.id)}
+                  disabled={resolvingId === p.id}
+                  className="px-3 py-2 rounded-xl bg-emerald-500 text-white text-sm font-semibold disabled:opacity-40"
+                >
+                  승인
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2">
         {rewards.map((r) => (
           <div key={r.id} className="card p-3 flex items-center gap-3">
@@ -145,18 +201,26 @@ export default function RewardManager() {
         ))}
       </div>
 
-      {history.length > 0 && (
+      {history.filter((h) => h.status !== "pending").length > 0 && (
         <div>
-          <h3 className="font-semibold text-sm mb-2 px-1">교환 내역</h3>
+          <h3 className="font-semibold text-sm mb-2 px-1">지난 교환 내역</h3>
           <div className="space-y-1.5">
-            {history.map((h) => (
-              <div key={h.id} className="card px-4 py-2.5 flex items-center justify-between text-sm">
-                <span>{h.reward_title}</span>
-                <span className="text-black/40 text-xs">
-                  -{h.points_spent}P · {h.redeemed_at.slice(0, 10)}
-                </span>
-              </div>
-            ))}
+            {history
+              .filter((h) => h.status !== "pending")
+              .map((h) => {
+                const meta = REDEMPTION_STATUS_META[h.status] ?? REDEMPTION_STATUS_META.pending;
+                return (
+                  <div key={h.id} className="card px-4 py-2.5 flex items-center justify-between text-sm gap-2">
+                    <span className="truncate">{h.reward_title}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-black/40 text-xs">
+                        {h.points_spent}P · {h.redeemed_at.slice(0, 10)}
+                      </span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${meta.className}`}>{meta.label}</span>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}

@@ -57,4 +57,5 @@ export interface ClassifiedItemDto {
   category: Category;
   suggestedDate: string | null;
   raw: string;
+  lowConfidence: boolean;
 }

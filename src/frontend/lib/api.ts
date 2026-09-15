@@ -41,7 +41,13 @@ export const api = {
   updateReward: (id: string, payload: { title: string; costPoints: number; icon: string }) =>
     request<{ ok: true }>(`/rewards/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteReward: (id: string) => request<{ ok: true }>(`/rewards/${id}`, { method: "DELETE" }),
-  redeemReward: (id: string) => request<{ ok: true; balance: number }>(`/rewards/${id}/redeem`, { method: "POST" }),
+  redeemReward: (id: string) => request<{ ok: true; balance: number; status: string }>(`/rewards/${id}/redeem`, { method: "POST" }),
+
+  pendingRedemptions: () => request<{ pending: RedemptionDto[] }>("/rewards/redemptions/pending"),
+  approveRedemption: (redemptionId: string) =>
+    request<{ ok: true }>(`/rewards/redemptions/${redemptionId}/approve`, { method: "POST" }),
+  rejectRedemption: (redemptionId: string) =>
+    request<{ ok: true }>(`/rewards/redemptions/${redemptionId}/reject`, { method: "POST" }),
 
   pointsBalance: () => request<{ balance: number }>("/points/balance"),
 };

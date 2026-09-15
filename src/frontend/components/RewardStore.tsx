@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
-import type { RewardDto } from "../lib/types";
+import type { RedemptionDto, RewardDto } from "../lib/types";
+import { REDEMPTION_STATUS_META } from "../lib/reward";
 import PointsBadge from "./PointsBadge";
 
 export default function RewardStore() {
   const [rewards, setRewards] = useState<RewardDto[]>([]);
+  const [history, setHistory] = useState<RedemptionDto[]>([]);
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
@@ -13,9 +15,10 @@ export default function RewardStore() {
   async function load() {
     setLoading(true);
     try {
-      const res = await api.rewards();
-      setRewards(res.rewards);
-      setBalance(res.balance);
+      const [r, h] = await Promise.all([api.rewards(), api.rewardHistory()]);
+      setRewards(r.rewards);
+      setBalance(r.balance);
+      setHistory(h.history);
     } finally {
       setLoading(false);
     }
@@ -31,7 +34,9 @@ export default function RewardStore() {
     try {
       const res = await api.redeemReward(reward.id);
       setBalance(res.balance);
-      setMessage(`"${reward.title}" 보상을 받았어요! 아빠에게 알려주세요 🎉`);
+      setMessage(`"${reward.title}" 교환을 신청했어요. 아빠가 승인하면 받을 수 있어요! 🙋`);
+      const h = await api.rewardHistory();
+      setHistory(h.history);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "교환에 실패했어요.");
     } finally {
@@ -68,11 +73,28 @@ export default function RewardStore() {
                     canAfford ? "bg-ink text-white" : "bg-black/5 text-black/30"
                   }`}
                 >
-                  {redeemingId === r.id ? "..." : canAfford ? "교환하기" : "포인트 부족"}
+                  {redeemingId === r.id ? "..." : canAfford ? "교환 신청" : "포인트 부족"}
                 </button>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {history.length > 0 && (
+        <div>
+          <h3 className="font-semibold text-sm mb-2 px-1">내 교환 신청 내역</h3>
+          <div className="space-y-1.5">
+            {history.map((h) => {
+              const meta = REDEMPTION_STATUS_META[h.status] ?? REDEMPTION_STATUS_META.pending;
+              return (
+                <div key={h.id} className="card px-4 py-2.5 flex items-center justify-between text-sm gap-2">
+                  <span className="truncate">{h.reward_title}</span>
+                  <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full ${meta.className}`}>{meta.label}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

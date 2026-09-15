@@ -13,6 +13,7 @@ interface ReviewItem {
   category: Category;
   date: string;
   points: number;
+  lowConfidence: boolean;
 }
 
 export default function NoticeImport({ onImported }: { onImported: () => void }) {
@@ -30,11 +31,12 @@ export default function NoticeImport({ onImported }: { onImported: () => void })
       const res = await api.classifyNotice(text);
       setItems(
         res.items.map((it) => ({
-          include: true,
+          include: !it.lowConfidence,
           title: it.title,
           category: it.category,
           date: it.suggestedDate ?? todayStr(),
           points: 0,
+          lowConfidence: it.lowConfidence,
         })),
       );
     } catch (err) {
@@ -108,6 +110,9 @@ export default function NoticeImport({ onImported }: { onImported: () => void })
                   className="flex-1 rounded-xl border border-black/10 px-3 py-2 text-sm outline-none"
                 />
               </div>
+              {item.lowConfidence && (
+                <div className="pl-6 text-xs text-black/35">오늘 시간표로 보여서 기본적으로 제외했어요. 필요하면 체크해서 등록하세요.</div>
+              )}
               <div className="flex items-center gap-2 flex-wrap pl-6">
                 <select
                   value={item.category}
