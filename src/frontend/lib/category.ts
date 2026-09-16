@@ -40,6 +40,13 @@ export const CATEGORY_META: Record<Category, CategoryMeta> = {
     solid: "bg-mint text-ink border-2 border-ink/10",
     dot: "bg-mint",
   },
+  notice: {
+    label: "전달사항",
+    emoji: "📢",
+    chip: "bg-grape-soft text-grape-deep border-2 border-grape",
+    solid: "bg-grape text-ink border-2 border-ink/10",
+    dot: "bg-grape",
+  },
   other: {
     label: "기타",
     emoji: "📌",
@@ -49,7 +56,16 @@ export const CATEGORY_META: Record<Category, CategoryMeta> = {
   },
 };
 
-export const CATEGORY_ORDER: Category[] = ["homework", "supplies", "exam", "event", "other"];
+export const CATEGORY_ORDER: Category[] = ["homework", "supplies", "exam", "event", "notice", "other"];
+
+/** 전달사항은 체크할 할일이 아니라 읽을거리라서 목록 맨 아래로 내린다. */
+export function compareForList(
+  a: { category: Category; title: string },
+  b: { category: Category; title: string },
+): number {
+  const rank = (c: Category) => (c === "notice" ? 1 : 0);
+  return rank(a.category) - rank(b.category) || a.title.localeCompare(b.title);
+}
 
 export function categoryChipClass(category: Category): string {
   return CATEGORY_META[category].chip;

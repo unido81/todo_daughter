@@ -21,7 +21,7 @@ function validatePayload(body: unknown): { ok: true; value: TaskPayload } | { ok
   if (typeof body !== "object" || body === null) return { ok: false, error: "요청 형식이 올바르지 않습니다." };
   const b = body as Record<string, unknown>;
   if (typeof b.title !== "string" || b.title.trim().length === 0) return { ok: false, error: "제목을 입력해주세요." };
-  const validCategories: Category[] = ["homework", "supplies", "exam", "event", "other"];
+  const validCategories: Category[] = ["homework", "supplies", "exam", "event", "notice", "other"];
   if (typeof b.category !== "string" || !validCategories.includes(b.category as Category)) {
     return { ok: false, error: "카테고리가 올바르지 않습니다." };
   }

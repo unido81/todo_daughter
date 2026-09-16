@@ -10,7 +10,7 @@ export type Role = "dad" | "daughter";
 
 export type AppEnv = { Bindings: Env; Variables: { role: Role } };
 
-export type Category = "homework" | "supplies" | "exam" | "event" | "other";
+export type Category = "homework" | "supplies" | "exam" | "event" | "notice" | "other";
 
 export type RepeatType = "once" | "daily" | "weekly" | "monthly";
 
@@ -65,11 +65,3 @@ export interface RedemptionRow {
   redeemed_at: string;
   resolved_at: string | null;
 }
-
-export const CATEGORY_LABELS: Record<Category, { label: string; color: string; emoji: string }> = {
-  homework: { label: "숙제", color: "rose", emoji: "📝" },
-  supplies: { label: "준비물", color: "amber", emoji: "🎒" },
-  exam: { label: "시험", color: "red", emoji: "✏️" },
-  event: { label: "행사", color: "emerald", emoji: "🎪" },
-  other: { label: "기타", color: "sky", emoji: "📌" },
-};

@@ -1,6 +1,6 @@
 export type Role = "dad" | "daughter";
 
-export type Category = "homework" | "supplies" | "exam" | "event" | "other";
+export type Category = "homework" | "supplies" | "exam" | "event" | "notice" | "other";
 
 export type RepeatType = "once" | "daily" | "weekly" | "monthly";
 

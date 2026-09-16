@@ -29,7 +29,7 @@ notices.post("/import", requireDad, async (c) => {
   if (!body || !Array.isArray(body.items) || body.items.length === 0) {
     return c.json({ error: "가져올 항목이 없습니다." }, 400);
   }
-  const validCategories: Category[] = ["homework", "supplies", "exam", "event", "other"];
+  const validCategories: Category[] = ["homework", "supplies", "exam", "event", "notice", "other"];
 
   const statements = [];
   for (const item of body.items) {

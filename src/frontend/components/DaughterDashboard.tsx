@@ -6,6 +6,7 @@ import TaskList, { type OccurrenceItem } from "./TaskList";
 import RewardStore from "./RewardStore";
 import PointsBadge from "./PointsBadge";
 import Face, { type Expression } from "./Face";
+import { compareForList } from "../lib/category";
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
@@ -70,7 +71,7 @@ export default function DaughterDashboard({ onLogout }: { onLogout: () => void }
         if (occ.date === selectedDate) list.push({ task, date: occ.date, completed: occ.completed });
       }
     }
-    return list.sort((a, b) => a.task.title.localeCompare(b.task.title));
+    return list.sort((a, b) => compareForList(a.task, b.task));
   }, [tasks, selectedDate]);
 
   const todayStats = useMemo(() => {
